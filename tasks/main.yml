@@ -1,0 +1,22 @@
+---
+- name: clone a repo
+  git: repo=https://github.com/apache/activemq-artemis.git dest=/root/activemq-artemis version=2.11.0
+
+- name: build a JAR
+  shell: /opt/maven3/bin/mvn -Prelease install -DskipTests
+  args:
+    chdir: /root/activemq-artemis
+    creates: /root/activemq-artemis/artemis-distribution/target/apache-artemis-2.11.0-bin/apache-artemis-2.11.0
+
+- name: prepare Docker files
+  shell: source ./prepare-docker.sh ../artemis-distribution/target/apache-artemis-2.11.0-bin/apache-artemis-2.11.0/
+  args:
+    executable: /bin/bash
+    chdir: /root/activemq-artemis/artemis-docker/
+    creates: /root/activemq-artemis/artemis-distribution/target/apache-artemis-2.11.0-bin/apache-artemis-2.11.0/docker/Dockerfile-ubuntu
+
+- name: build a Docker image for Artemis
+  command: docker build -f /root/activemq-artemis/artemis-distribution/target/apache-artemis-2.11.0-bin/apache-artemis-2.11.0/docker/Dockerfile-ubuntu -t kofonfor/activemq-artemis:2.11.0 --rm /root/activemq-artemis/artemis-distribution/target/apache-artemis-2.11.0-bin/apache-artemis-2.11.0/
+
+- name: tag it as latest
+  command: docker build -f /root/activemq-artemis/artemis-distribution/target/apache-artemis-2.11.0-bin/apache-artemis-2.11.0/docker/Dockerfile-ubuntu -t kofonfor/activemq-artemis:latest --rm /root/activemq-artemis/artemis-distribution/target/apache-artemis-2.11.0-bin/apache-artemis-2.11.0/
